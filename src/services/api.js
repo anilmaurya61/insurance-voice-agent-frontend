@@ -9,7 +9,9 @@ export const getPlanDetails = (planType) =>
   axios.get(`${API_BASE}/plan/${planType}`);
 
 export const getRecommendedRiders = (age) =>
-  axios.post(`${API_BASE}/riders`, { age });
+  axios.get(`${API_BASE}/riders`, {
+    params: { age }
+  });
 
 export const saveUserSelection = (data) =>
   axios.post(`${API_BASE}/selection`, data);

@@ -10,7 +10,7 @@ export const speak = (text, outputRef) => {
   });
 };
 
-export const listen = (promptIfSilent = "", retries = 2, outputRef, listeningRef) => {
+export const listen = (promptIfSilent = "", retries = 2, outputRef, setIsListening) => {
   return new Promise((resolve, reject) => {
     const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     recognition.lang = 'en-IN';
@@ -21,12 +21,12 @@ export const listen = (promptIfSilent = "", retries = 2, outputRef, listeningRef
     let resolved = false;
 
     const startListening = () => {
-      listeningRef.current.style.display = "block";
+      setIsListening(true);
       recognition.start();
     };
 
     recognition.onresult = async (event) => {
-      listeningRef.current.style.display = "none";
+      setIsListening(false);
       const transcript = event.results[0][0].transcript.trim().toLowerCase();
       outputRef.current.innerHTML += `<p><strong>You:</strong> ${transcript}</p>`;
 
@@ -41,7 +41,7 @@ export const listen = (promptIfSilent = "", retries = 2, outputRef, listeningRef
     };
 
     recognition.onerror = async (event) => {
-      listeningRef.current.style.display = "none";
+      setIsListening(false);
       outputRef.current.innerHTML += `<p style="color:red;"><strong>Error:</strong> ${event.error}</p>`;
       if (attempts < retries) {
         attempts++;
@@ -54,7 +54,7 @@ export const listen = (promptIfSilent = "", retries = 2, outputRef, listeningRef
 
     recognition.onend = () => {
       if (!resolved) {
-        listeningRef.current.style.display = "none";
+        setIsListening(false);
         if (attempts < retries) {
           attempts++;
           speak(promptIfSilent, outputRef);

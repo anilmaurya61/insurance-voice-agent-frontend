@@ -10,13 +10,13 @@ import ListeningIndicator from './ListeningIndicator';
 
 const VoiceAssistant = () => {
   const outputRef = useRef(null);
-  const listeningRef = useRef(null);
   const [disabled, setDisabled] = useState(false);
+  const [isListening, setIsListening] = useState(false);
 
   const getValidResponse = async (promptText, validOptions, errorPrompt = "Sorry, I didn't understand. Please try again.") => {
     while (true) {
       await speak(promptText, outputRef);
-      const response = await listen("", 2, outputRef, listeningRef);
+      const response = await listen("", 2, outputRef, setIsListening);
       const matched = validOptions.find(opt => response.includes(opt.toLowerCase()));
       if (matched) return matched;
       await speak(errorPrompt, outputRef);
@@ -25,7 +25,7 @@ const VoiceAssistant = () => {
 
   const getValidAge = async () => {
     while (true) {
-      const ageResponse = await listen("Please tell me your age.", 2, outputRef, listeningRef);
+      const ageResponse = await listen("Please tell me your age.", 2, outputRef, setIsListening);
       const age = parseInt(ageResponse.match(/\d+/)?.[0]);
       if (age > 0 && age < 120) return age;
       await speak("That doesn't seem like a valid age. Please say a number between 1 and 120.", outputRef);
@@ -36,19 +36,14 @@ const VoiceAssistant = () => {
     setDisabled(true);
     try {
       await speak("Hi! Please say your name or user ID to begin.", outputRef);
-      const userIdRaw = await listen("Please say your name or user ID.", 2, outputRef, listeningRef);
+      const userIdRaw = await listen("Please say your name or user ID.", 2, outputRef, setIsListening);
       const userId = userIdRaw.replace(/\s+/g, '-').toLowerCase();
 
       const { data: existing } = await checkUserSelection(userId);
 
       if (existing?.policy) {
-        await speak(`You previously selected the ${existing.policy} plan with riders: ${existing.riders?.join(", ") || "none"} at age ${existing.age}. Would you like to update it?`, outputRef);
-        const updateResp = await getValidResponse("Would you like to update your selection?", ["yes", "no"]);
-        if (updateResp !== "yes") {
-          await speak("Okay, keeping your current selection. Thank you!", outputRef);
-          setDisabled(false);
-          return;
-        }
+        await speak(`You previously selected the ${existing.policy} plan with riders: ${existing.riders?.join(", ") || "none"} at age ${existing.age}. Thanks you!`, outputRef);
+        return;
       }
 
       const planType = await getValidResponse("Would you like to hear about our Silver or Gold health insurance plan?", ["silver", "gold"]);
@@ -64,7 +59,7 @@ const VoiceAssistant = () => {
       let selectedRiders = [];
       while (selectedRiders.length === 0) {
         await speak(`Based on your age, we recommend: ${riderList.join(", ")}. Please say one or more riders.`, outputRef);
-        const selectedRes = await listen("Please name one or more riders.", 2, outputRef, listeningRef);
+        const selectedRes = await listen("Please name one or more riders.", 2, outputRef, setIsListening);
         selectedRiders = riderList.filter(r => selectedRes.includes(r.toLowerCase()));
         if (selectedRiders.length === 0) {
           await speak("I couldn't match any rider from your response. Please try again.", outputRef);
@@ -87,7 +82,7 @@ const VoiceAssistant = () => {
       <h1>Welcome to Policy Voice Assistant</h1>
       <button onClick={startAssistant} disabled={disabled}>Start Talking</button>
       <div ref={outputRef}></div>
-      <div ref={listeningRef}><ListeningIndicator /></div>
+        <ListeningIndicator isVisible={isListening} />
     </div>
   );
 };
